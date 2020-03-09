@@ -1,50 +1,74 @@
 #!/usr/local/python3
 import pandas as pd
-import sqlalchemy
+from sqlalchemy import create_engine
 import yaml
-import logging
 import os
+import sys
 
-raise NotImplementedError('THIS IS A WORK IN PROGRESS, DO NOT USE!')
+def collect_tables():
+    files=list()
+    tables=set()
+    for root,dirs,files in os.walk(os.path.join(PROJECT_ROOT,
+                                                "tests",
+                                                "assets",
+                                                "data")):
+        for name in files:
+            if name.endswith('.csv'):
+                files.append(os.path.join(PROJECT_ROOT,
+                                          "tests",
+                                          "data",
+                                          root,
+                                          name)
+    for f in files:
+        fileparts=f.split(os.path.sep)
+        for part in fileparts:
+            if part.startswith('SCHEMA='):
+                schema=part.replace('SCHEMA=','')
+        name=fileparts[-1].replace('.csv','')
+        tables.add((f,schema,name,))
+    return tables
 
-paths = list()
-for p in os.walk('./DATABASE=SNOWSHU_DEVELOPMENT/SCHEMA=SOURCE_SYSTEM'):
-    for f in p[-1]:
-        paths.append(('SOURCE_SYSTEM', os.path.join(p[0], f),))
-for p in os.walk('./DATABASE=SNOWSHU_DEVELOPMENT/SCHEMA=EXTERNAL_DATA'):
-    for f in p[-1]:
-        paths.append(('EXTERNAL_DATA', os.path.join(p[0], f),))
-for p in paths:
-    with open(p) as f:
-        frame = pd.read_csv(f)
-        frame.to_sql(p[1].split('/')[-1].replace('.csv', '').upper(),
-                     e, schema=p[0], index=False, chunksize=16000)
-"""
+def get_conn(profile, creds_file):
+    with open(creds_file, 'r') as f:
+        creds=yaml.loads(f.read())['sources'][profile]
+        if profile == 'bigquery':
+            return create_engine('bigquery://SNOWSHU-DEVELOPMENT',
+                                 credentials_path=creds['keyfile_path']
+                                )
+        if profile == 'snowflake':
+            return create_engine('snowflake:://{}:{}@{}/SNOWSHU_DEVELOPMENT'.format((creds['user']
+    creds['password'],
+    creds['account'],)
+)
+        else:
+            raise ValueError(f'{profile} not supported by setup script.')
 
-def load_integration_tests():
-    
-    conn=build_connectable()
-    
-    for name, schema, csv_file in get_source_files():
-        logger.info(f'Inserting table "{schema}"."{name}"...')
-        frame=pd.read_csv(csv_file)
-        frame.to_sql(name, conn, schema=schema)
-        logger.info(f'Done inserting table "{schema}"."{name}".')
+def main(profile,
+         creds_file):
         
-    
-    ## make views for good measure
-        users_view=dict(name='USERS_VIEW',schema='SOURCE_SYSTEM',sql='SELECT * FROM "SNOWSHU_DEVELOPMENT"."SOURCE_SYSTEM"."USERS"')
-        address_region_attributes_view=dict(name='address_region_attributes_view',schema='EXTERNAL_DATA',sql='SELECT * FROM "SNOWSHU_DEVELOPMENT"."EXTERNAL_DATA"."ADDRESS_REGION_ATTRIBUTES"')
-        
-        for view in (users_view,address_region_attributes_view,):
-            logger.info(f'Creating view {view.name}...')
-            create=f'CREATE VIEW "SNOWSHU_DEVELOPMENT"."{view.schema}"."{view.name}" AS {view.sql}'
-            conn.execute(create)
-            logger.info('Done creating view {view.name}.')
+    tables=collect_tables()
+    conn=get_conn(profile,creds_file)
 
-def build_connectable():
-    
+    for table in tables:
+        print(f'Creating table {table[2]}...')     
+        pd.read_csv(table[0]).to_sql(table[2],
+                                     conn,
+                                     schema=table[1],
+                                     chunksize=16000
+                                     )
+        print(f'Created table {table[2]}.')     
 
-def get_source_files():
-    for schema in 
-"""
+    ## make views 
+    users_view=dict(name='USERS_VIEW',schema='SOURCE_SYSTEM',sql='SELECT * FROM "SNOWSHU_DEVELOPMENT"."SOURCE_SYSTEM"."USERS"')
+    address_region_attributes_view=dict(name='address_region_attributes_view',schema='EXTERNAL_DATA',sql='SELECT * FROM "SNOWSHU_DEVELOPMENT"."EXTERNAL_DATA"."ADDRESS_REGION_ATTRIBUTES"')
+    
+    for view in (users_view,address_region_attributes_view,):
+        logger.info(f'Creating view {view.name}...')
+        create=f'CREATE VIEW "SNOWSHU_DEVELOPMENT"."{view.schema}"."{view.name}" AS {view.sql}'
+        conn.execute(create)
+        logger.info('Done creating view {view.name}.')
+
+if __name__ == "__main__":
+    main(sys.argval[1:])
+
+

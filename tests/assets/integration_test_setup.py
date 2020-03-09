@@ -5,6 +5,9 @@ import yaml
 import os
 import sys
 
+PROJECT_ROOT = os.cwd()
+
+
 def collect_tables():
     files=list()
     tables=set()
@@ -18,7 +21,7 @@ def collect_tables():
                                           "tests",
                                           "data",
                                           root,
-                                          name)
+                                          name))
     for f in files:
         fileparts=f.split(os.path.sep)
         for part in fileparts:
@@ -36,16 +39,17 @@ def get_conn(profile, creds_file):
                                  credentials_path=creds['keyfile_path']
                                 )
         if profile == 'snowflake':
-            return create_engine('snowflake:://{}:{}@{}/SNOWSHU_DEVELOPMENT'.format((creds['user']
+            return create_engine('snowflake:://{}:{}@{}/SNOWSHU_DEVELOPMENT'.format((creds['user'],
     creds['password'],
     creds['account'],)
-)
+))
         else:
             raise ValueError(f'{profile} not supported by setup script.')
 
 def main(profile,
          creds_file):
         
+    database="SNOWSHU_DEVELOPMENT" 
     tables=collect_tables()
     conn=get_conn(profile,creds_file)
 

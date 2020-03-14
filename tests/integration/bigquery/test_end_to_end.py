@@ -21,12 +21,8 @@ SNOWSHU_DEVELOPMENT_STRING=BASE_CONN.format('snowshu_development')
 @pytest.fixture(scope="session", autouse=True)
 def end_to_end(docker_flush_session):
     runner = CliRunner()
-    configuration_path = os.path.join(PACKAGE_ROOT, 
-                                      'tests', 
-                                      'integration', 
-                                      'replica_files',
-                                      'snowflake_replica.yml')
-
+    configuration_path = os.path.join(
+        PACKAGE_ROOT, 'snowshu', 'templates', 'replica.yml')
     create_output=runner.invoke(cli, ('create', '--replica-file', configuration_path)).output.split('\n')
     client=docker.from_env()
     client.containers.run('snowshu_replica_integration-test',

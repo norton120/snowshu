@@ -1,6 +1,7 @@
 .DS_Store
 .coverage
 *.swp
+keyfile.json
 snowshu.egg-info/
 dist/
 build/

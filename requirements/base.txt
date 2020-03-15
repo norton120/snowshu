@@ -13,4 +13,5 @@ scipy==1.4.1
 -r snowflake_pins.txt
 
 ##BIGQUERY
+google-cloud-bigquery==1.24.0
 pybigquery==0.4.14

@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import Type, Optional,List
 import docker
 import re
+from requests.exceptions import ChunkedEncodingError
 from snowshu.configs import DOCKER_NETWORK,\
     DOCKER_TARGET_CONTAINER
 from snowshu.logger import Logger
@@ -114,7 +115,8 @@ class SnowShuDocker:
                 pass
             removable.remove()
             logger.info(f'Container {container} removed.')
-        except docker.errors.NotFound:
+        except (docker.errors.NotFound,
+                ChunkedEncodingError):
             logger.info(f'Container {container} not found, skipping.')
             pass  # already removed.
 

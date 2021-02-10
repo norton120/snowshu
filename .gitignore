@@ -7,6 +7,7 @@ build/
 *.pyc
 *.log
 *.log.*
+keyfile.json
 snowshu_barf_output/
 
 tests/assets/integration/trail-path.yml
